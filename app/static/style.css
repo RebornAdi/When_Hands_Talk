@@ -1,0 +1,10 @@
+/* app/static/style.css */
+body { font-family: Arial, Helvetica, sans-serif; background:#f6f7fb; color:#111; }
+.container { width:740px; margin:24px auto; background:white; padding:16px 20px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+.video-row { display:flex; gap:12px; }
+.controls { margin-top:12px; display:flex; align-items:center; gap:8px; }
+.controls input { width:80px; }
+.result { margin-top:12px; padding:8px; background:#f2f6ff; border-radius:6px; }
+.note { font-size:12px; color:#666; margin-top:8px; }
+button { padding:8px 12px; border-radius:6px; border:1px solid #ddd; cursor:pointer; background:#fff; }
+button:disabled { opacity:0.5; cursor:not-allowed; }

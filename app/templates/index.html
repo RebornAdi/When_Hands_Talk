@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ASL A–D Recognition — Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>ASL A–D Recognition (Demo)</h1>
+    <div class="video-row">
+      <video id="video" autoplay playsinline width="640" height="480"></video>
+      <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <label for="interval">Send interval (ms): </label>
+      <input id="interval" type="number" value="400" min="100" step="50" />
+    </div>
+    <div class="result">
+      <h2>Prediction: <span id="label">—</span></h2>
+      <p>Confidence: <span id="conf">—</span></p>
+    </div>
+    <p class="note">Note: frames are sent to the Flask server which runs MediaPipe + model.</p>
+  </div>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
