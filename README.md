@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Hand Gesture Recognition System  
 
 ## 📌 Overview  
