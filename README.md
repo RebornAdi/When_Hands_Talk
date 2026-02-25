@@ -1,176 +1,70 @@
+👐 When Hands Talk
+Real-Time Hand Sign Alphabet Recognition System
+📌 Project Overview
 
-# 👐 When Hands Talk
+When Hands Talk is a real-time computer vision–based hand sign recognition system developed to assist deaf and speech-impaired individuals in basic communication. The application recognizes hand sign alphabets through a webcam and instantly converts them into readable text.
 
-### Real-Time Hand Sign Recognition for Alphabets
+The system leverages MediaPipe for high-precision hand landmark detection and a Support Vector Machine (SVM) classifier implemented using Scikit-learn for gesture classification. By combining machine learning with real-time video processing, the project demonstrates an accessible and scalable assistive technology solution.
 
-## 📌 Overview
+🎯 Objectives
 
-**When Hands Talk** is a real-time hand sign recognition system designed to assist **deaf and speech-impaired individuals** by recognizing hand sign **alphabets** through a webcam.
+Enable real-time recognition of hand sign alphabets
 
-The system uses **MediaPipe** for precise hand landmark detection and a **Support Vector Machine (SVM)** classifier built with **Scikit-learn** to classify hand signs in real time. The recognized alphabet is displayed instantly on the screen, enabling basic assistive communication.
+Support assistive communication technologies
 
----
+Provide a modular pipeline for data collection, training, and deployment
 
-## ✨ Features
+Demonstrate practical application of computer vision and machine learning
 
-✅ Real-time hand sign detection via webcam
-✅ Recognizes alphabets
-✅ Designed for deaf & speech-impaired communication
-✅ Custom data collection and training
-✅ Machine learning–based classification (SVM)
-✅ Modular and easy-to-extend codebase
+✨ Key Features
 
----
+✅ Real-time hand tracking using webcam input
 
-## ⚙️ Setup & Installation
+✅ Alphabet-level hand sign recognition
 
-### 1️⃣ Clone the Repository
+✅ Machine Learning–based classification (SVM)
 
-```bash
-git clone https://github.com/RebornAdi/hand-gesture-recognition.git
-cd hand-gesture-recognition
-```
+✅ Custom dataset creation pipeline
 
-### 2️⃣ Install Dependencies
+✅ Modular and extensible architecture
 
-```bash
-pip install -r requirements.txt
-```
+✅ Lightweight and hardware-efficient implementation
 
----
+🧠 Technology Stack
+Category	Technologies Used
+Programming Language	Python
+Computer Vision	OpenCV, MediaPipe
+Machine Learning	Scikit-learn (SVM)
+Numerical Computing	NumPy
+Model Storage	Pickle
+Hardware	Standard Webcam
 
-## 📁 Project Structure
-
-```
+📁 Project Architecture
 hand-gesture-recognition/
-├── data/               # Collected samples for A, B, C, D
-├── models/             # Trained ML models
-├── scripts/            # Core execution scripts
+│
+├── data/                # Dataset samples (A–D gestures)
+├── models/              # Saved trained models
+├── scripts/             # Core pipeline scripts
 │   ├── 1_hand_detection.py
 │   ├── 2_data_collection.py
 │   ├── 3_model_training.py
 │   ├── 4_sign_recognition.py
 │   ├── helpers.py
-│   └── config.py  
+│   └── config.py
+│
 ├── requirements.txt
 └── README.md
-```
 
----
+🔮 Future Enhancements
 
-## 🚀 How to Run
+Full alphabet recognition (A–Z)
 
-### Step 1: Test Hand Detection
+Text-to-Speech (TTS) integration
 
-```bash
-python scripts/1_hand_detection.py
-```
+Indian Sign Language (ISL) support
 
-* Verifies webcam access
-* Displays real-time hand landmarks
-* Press **ESC** to exit
+Word and sentence-level recognition
 
----
+Deep learning–based gesture classification (CNN/LSTM)
 
-### Step 2: Collect Hand Sign Data
-
-```bash
-python scripts/2_data_collection.py
-```
-
-* Follow on-screen instructions
-* Record samples for each alphabet
-
-**Supported Alphabets:**
-
-* `0` – A
-* `1` – B
-* `2` – C
-* `3` – D
-
----
-
-### Step 3: Train the Model
-
-```bash
-python scripts/3_model_training.py
-```
-
-* Trains an SVM classifier on the collected data
-* Saves the trained model to:
-
-  ```
-  models/gesture_model.pkl
-  ```
-
----
-
-### Step 4: Real-Time Alphabet Recognition
-
-```bash
-python scripts/4_sign_recognition.py
-```
-
-* Detects and classifies hand signs in real time
-* Displays the recognized alphabet (A–D)
-* Press **ESC** to exit
-
----
-
-## 🔧 Customization
-
-### ➕ Modify Recognized Alphabets
-
-Edit `config.py`:
-
-```python
-GESTURE_LABELS = {
-    0: "A",
-    1: "B",
-    2: "C",
-    3: "D"
-}
-NUM_GESTURES = 4
-```
-
----
-
-### 🎯 Improve Accuracy
-
-* Increase `SAMPLES_PER_GESTURE` in `config.py`
-* Maintain consistent lighting while recording
-* Keep the hand centered in the camera frame
-
----
-
-## 🛠 Troubleshooting
-
-* **Webcam not detected?**
-  Try `cv2.VideoCapture(1)` instead of `0`
-* **Import errors?**
-  Run scripts from the project root directory
-
----
-
-## 📜 License
-
-This project is open-source and available under the **MIT License**.
-
----
-
-## 💡 Future Enhancements
-
-* Extend recognition to full alphabet (A–Z)
-* Add **text-to-speech** output
-* Support **Indian Sign Language (ISL)**
-* Sentence-level sign recognition
-
----
-
-### 👐 *When Hands Talk, Silence Speaks.*
-
-If you want, I can now:
-
-* Write a **perfect abstract** for your report
-* Prepare **viva explanation points**
-* Upgrade this to **A–Z without breaking structure**
+Mobile or web deployment
