@@ -6,20 +6,11 @@ import torch
 import torch.nn as nn
 import time
 from collections import deque
-from config import (
-    MODEL_DIR, MODEL_NAME, SCALER_NAME,
-    GESTURE_LABELS, SMOOTHING_ALPHA, VOTE_WINDOW,
-    MIN_DETECTION_CONFIDENCE, MIN_TRACKING_CONFIDENCE, MAX_NUM_HANDS
-)
+from config import (MODEL_DIR, MODEL_NAME, SCALER_NAME,GESTURE_LABELS, SMOOTHING_ALPHA, VOTE_WINDOW,MIN_DETECTION_CONFIDENCE, MIN_TRACKING_CONFIDENCE, MAX_NUM_HANDS)
 
-# -------------------------------
 # Load scaler
-# -------------------------------
 scaler = joblib.load(f"{MODEL_DIR}/{SCALER_NAME}")
 
-# -------------------------------
-# SAME MODEL ARCHITECTURE AS TRAINING
-# -------------------------------
 class MLP(nn.Module):
     def __init__(self, input_dim, num_classes):
         super().__init__()
@@ -37,9 +28,7 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-# -------------------------------
 # Load model
-# -------------------------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 input_dim = scaler.mean_.shape[0]
 
@@ -48,20 +37,12 @@ model.load_state_dict(torch.load(f"{MODEL_DIR}/{MODEL_NAME}", map_location=devic
 model.to(device)
 model.eval()
 
-# -------------------------------
 # Setup Mediapipe
-# -------------------------------
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(
-    max_num_hands=MAX_NUM_HANDS,
-    min_detection_confidence=MIN_DETECTION_CONFIDENCE,
-    min_tracking_confidence=MIN_TRACKING_CONFIDENCE
-)
+hands = mp_hands.Hands(max_num_hands=MAX_NUM_HANDS, min_detection_confidence=MIN_DETECTION_CONFIDENCE,min_tracking_confidence=MIN_TRACKING_CONFIDENCE)
 mp_draw = mp.solutions.drawing_utils
 
-# -------------------------------
 # Smoothing buffers
-# -------------------------------
 pred_buffer = deque(maxlen=VOTE_WINDOW)
 smooth_landmarks = None
 
@@ -83,17 +64,12 @@ while True:
         hand = results.multi_hand_landmarks[0]
         mp_draw.draw_landmarks(display, hand, mp_hands.HAND_CONNECTIONS)
 
-        # Flatten 21×3 → 63
         raw = np.array([[lm.x, lm.y, lm.z] for lm in hand.landmark]).flatten()
 
-        # Smooth landmarks using EWMA
         if smooth_landmarks is None:
             smooth_landmarks = raw
         else:
-            smooth_landmarks = (
-                SMOOTHING_ALPHA * raw +
-                (1 - SMOOTHING_ALPHA) * smooth_landmarks
-            )
+            smooth_landmarks = (SMOOTHING_ALPHA * raw +(1 - SMOOTHING_ALPHA) * smooth_landmarks)
 
         # Scale input
         X = scaler.transform([smooth_landmarks])[0]
@@ -117,7 +93,7 @@ while True:
 
     cv2.imshow("ASL A-D Recognition", display)
 
-    if cv2.waitKey(1) & 0xFF == 27:  # ESC
+    if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cap.release()
