@@ -1,23 +1,44 @@
-# app/api.py
+"""
+app/api.py
+Flask backend serving the web-based sign-to-text-to-voice demo.
+"""
+
 import os
 import io
+import json
 import base64
+
 import cv2
 import joblib
 import numpy as np
 from PIL import Image
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 import torch
 import torch.nn as nn
 import mediapipe as mp
-from config import MODEL_DIR, MODEL_NAME, SCALER_NAME, GESTURE_LABELS, MIN_DETECTION_CONFIDENCE, MIN_TRACKING_CONFIDENCE, MAX_NUM_HANDS, SMOOTHING_ALPHA, VOTE_WINDOW
+
+from config import (
+    MODEL_DIR, SCALER_NAME, MODEL_NAME, LABEL_MAP_NAME,
+    MIN_DETECTION_CONFIDENCE, MIN_TRACKING_CONFIDENCE, MAX_NUM_HANDS,
+    STABLE_FRAMES_REQUIRED, COMMIT_COOLDOWN_SECONDS,
+    SPACE_LABEL, DELETE_LABEL, NO_HAND_LABEL
+)
+from sentence_builder import SentenceBuilder
+from tts_engine import synthesize_to_file
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # -----------------------
-# Load scaler + model
+# Load label map saved at training time (NOT straight from config.py) -
+# this guarantees the API always matches what the model was actually
+# trained on, even if config.py has since been edited.
 # -----------------------
+with open(os.path.join(MODEL_DIR, LABEL_MAP_NAME)) as f:
+    raw_map = json.load(f)
+LABEL_MAP = {int(k): v for k, v in raw_map.items()}
+
 scaler = joblib.load(os.path.join(MODEL_DIR, SCALER_NAME))
+
 
 class MLP(nn.Module):
     def __init__(self, input_dim, num_classes):
@@ -30,32 +51,44 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(64, num_classes)
         )
+
     def forward(self, x):
         return self.net(x)
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 input_dim = scaler.mean_.shape[0]
-model = MLP(input_dim, len(GESTURE_LABELS))
+model = MLP(input_dim, len(LABEL_MAP))
 model.load_state_dict(torch.load(os.path.join(MODEL_DIR, MODEL_NAME), map_location=device))
 model.to(device)
 model.eval()
 
-# -----------------------
-# MediaPipe setup
-# -----------------------
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=True,
-                       max_num_hands=MAX_NUM_HANDS,
-                       min_detection_confidence=MIN_DETECTION_CONFIDENCE,
-                       min_tracking_confidence=MIN_TRACKING_CONFIDENCE)
+hands = mp_hands.Hands(
+    static_image_mode=True,
+    max_num_hands=MAX_NUM_HANDS,
+    min_detection_confidence=MIN_DETECTION_CONFIDENCE,
+    min_tracking_confidence=MIN_TRACKING_CONFIDENCE
+)
 
-# small helper to decode base64 jpeg
+# Single shared sentence buffer - fine for a single-user demo.
+# For a multi-user deployment you'd key this by session/user ID instead.
+builder = SentenceBuilder(
+    stable_frames_required=STABLE_FRAMES_REQUIRED,
+    cooldown_seconds=COMMIT_COOLDOWN_SECONDS,
+    space_label=SPACE_LABEL,
+    delete_label=DELETE_LABEL,
+    no_hand_label=NO_HAND_LABEL,
+)
+
+
 def decode_base64_image(base64_str):
     header, encoded = base64_str.split(',', 1) if ',' in base64_str else (None, base64_str)
     data = base64.b64decode(encoded)
     image = Image.open(io.BytesIO(data)).convert('RGB')
-    arr = np.array(image)[:, :, ::-1]  # RGB -> BGR (cv2)
+    arr = np.array(image)[:, :, ::-1]  # RGB -> BGR for cv2/mediapipe consistency
     return arr
+
 
 def extract_landmarks_from_bgr(image_bgr):
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
@@ -68,42 +101,70 @@ def extract_landmarks_from_bgr(image_bgr):
         return None
     return lm
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/predict_image", methods=["POST"])
 def predict_image():
     """
     Expects JSON: { "image": "data:image/jpeg;base64,..." }
-    Returns: { label, confidence }
+    Returns: { label, confidence, sentence, committed }
     """
     data = request.get_json()
     if not data or "image" not in data:
         return jsonify({"error": "no image provided"}), 400
 
     try:
-        b64 = data["image"]
-        img = decode_base64_image(b64)
+        img = decode_base64_image(data["image"])
         lm = extract_landmarks_from_bgr(img)
-        if lm is None:
-            return jsonify({"label": "NoHand", "confidence": 0.0})
 
-        # scale and predict
+        if lm is None:
+            builder.update(NO_HAND_LABEL)
+            return jsonify({
+                "label": "NoHand",
+                "confidence": 0.0,
+                "sentence": builder.get_sentence()
+            })
+
         feat = scaler.transform([lm])[0]
         x = torch.tensor(feat, dtype=torch.float32).unsqueeze(0).to(device)
         with torch.no_grad():
             out = model(x)
             probs = torch.softmax(out, dim=1).cpu().numpy()[0]
             idx = int(np.argmax(probs))
-            label = GESTURE_LABELS.get(idx, "Unknown")
+            label = LABEL_MAP.get(idx, "Unknown")
             conf = float(probs[idx])
 
-        return jsonify({"label": label, "confidence": conf})
+        committed = builder.update(label)
+
+        return jsonify({
+            "label": label,
+            "confidence": conf,
+            "sentence": builder.get_sentence(),
+            "committed": committed  # None unless a letter/space/delete just locked in
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/clear_sentence", methods=["POST"])
+def clear_sentence():
+    builder.clear()
+    return jsonify({"sentence": ""})
+
+
+@app.route("/speak", methods=["POST"])
+def speak():
+    text = builder.get_sentence().strip()
+    if not text:
+        return jsonify({"error": "nothing to speak yet"}), 400
+    audio_path = synthesize_to_file(text)
+    return send_file(audio_path, mimetype="audio/wav", as_attachment=False)
+
+
 if __name__ == "__main__":
-    # optionally set FLASK_ENV=development for debugging
     app.run(host="0.0.0.0", port=5000, debug=True)

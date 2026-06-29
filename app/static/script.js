@@ -6,6 +6,9 @@ const canvas   = document.getElementById('canvas');
 const labelEl  = document.getElementById('label');
 const confEl   = document.getElementById('conf');
 const intervalInput = document.getElementById('interval');
+const sentenceEl = document.getElementById('sentence');
+const speakBtn = document.getElementById('speakBtn');
+const clearBtn = document.getElementById('clearBtn');
 
 let stream = null;
 let captureInterval = null;
@@ -25,10 +28,8 @@ function stopCamera() {
 }
 
 async function sendFrame() {
-  // draw current video frame to canvas
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  // compress to jpeg dataURL
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // reduce size
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // compress to reduce payload size
   try {
     const res = await fetch('/predict_image', {
       method: 'POST',
@@ -39,6 +40,7 @@ async function sendFrame() {
     if (j.label) {
       labelEl.textContent = j.label;
       confEl.textContent = (j.confidence || 0).toFixed(2);
+      sentenceEl.textContent = j.sentence || "";
     } else if (j.error) {
       labelEl.textContent = "Error";
       confEl.textContent = j.error;
@@ -61,4 +63,21 @@ stopBtn.addEventListener('click', () => {
   stopBtn.disabled = true;
   if (captureInterval) clearInterval(captureInterval);
   stopCamera();
+});
+
+speakBtn.addEventListener('click', async () => {
+  const res = await fetch('/speak', { method: 'POST' });
+  if (res.ok) {
+    const blob = await res.blob();
+    const audio = new Audio(URL.createObjectURL(blob));
+    audio.play();
+  } else {
+    const j = await res.json();
+    alert(j.error || 'Nothing to speak yet');
+  }
+});
+
+clearBtn.addEventListener('click', async () => {
+  await fetch('/clear_sentence', { method: 'POST' });
+  sentenceEl.textContent = "";
 });

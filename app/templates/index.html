@@ -1,30 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>ASL A–D Recognition — Demo</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>When Hands Talk — Sign to Speech</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="container">
-    <h1>ASL A–D Recognition (Demo)</h1>
+    <h2>🤟 When Hands Talk</h2>
+    <p class="note">Real-time sign language recognition → text → speech</p>
+
     <div class="video-row">
-      <video id="video" autoplay playsinline width="640" height="480"></video>
-      <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+      <video id="video" width="360" height="270" autoplay playsinline></video>
+      <canvas id="canvas" width="360" height="270" style="display:none;"></canvas>
     </div>
+
     <div class="controls">
-      <button id="startBtn">Start</button>
-      <button id="stopBtn" disabled>Stop</button>
-      <label for="interval">Send interval (ms): </label>
-      <input id="interval" type="number" value="400" min="100" step="50" />
+      <button id="startBtn">Start Camera</button>
+      <button id="stopBtn" disabled>Stop Camera</button>
+      <label>Interval (ms): <input id="interval" type="number" value="400" min="100" step="50"></label>
     </div>
+
     <div class="result">
-      <h2>Prediction: <span id="label">—</span></h2>
-      <p>Confidence: <span id="conf">—</span></p>
+      <p>Current sign: <strong id="label">-</strong> (confidence: <span id="conf">0.00</span>)</p>
+      <p>Sentence: <strong id="sentence"></strong></p>
+      <button id="speakBtn">🔊 Speak</button>
+      <button id="clearBtn">🗑️ Clear</button>
     </div>
-    <p class="note">Note: frames are sent to the Flask server which runs MediaPipe + model.</p>
+
+    <p class="note">Tip: hold each sign steady for about a second so it has time to lock in.</p>
   </div>
+
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

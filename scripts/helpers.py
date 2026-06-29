@@ -1,7 +1,13 @@
+"""
+helpers.py
+Helper functions for the gesture mirror bonus feature (5_gesture_mirror.py).
+"""
+
 import cv2
 import numpy as np
 import mediapipe as mp
 from config import HAND_DETECTION, CAMERA, MIRROR
+
 
 def initialize_hands():
     """Initialize MediaPipe Hands with config settings"""
@@ -14,6 +20,7 @@ def initialize_hands():
         model_complexity=HAND_DETECTION['model_complexity']
     )
 
+
 def initialize_camera():
     """Set up camera with configured settings"""
     cap = cv2.VideoCapture(0)
@@ -21,11 +28,13 @@ def initialize_camera():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA['height'])
     return cap
 
+
 def create_mirror_canvas():
     """Create styled canvas for mirror hand"""
     canvas = np.zeros((MIRROR['height'], MIRROR['width'], 3), dtype=np.uint8)
     canvas[:] = MIRROR['background_color']
     return canvas
+
 
 def draw_stylized_hand(canvas, landmarks):
     """Draw hand with custom styling"""
@@ -45,12 +54,14 @@ def draw_stylized_hand(canvas, landmarks):
     )
     return canvas
 
+
 def extract_landmarks(hand_landmarks):
     """Extract (x, y, z) coordinates from hand landmarks"""
     return [
         [landmark.x, landmark.y, landmark.z]
         for landmark in hand_landmarks.landmark
     ]
+
 
 def flip_frame(frame):
     """Flip frame horizontally if configured"""
